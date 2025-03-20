@@ -1,0 +1,41 @@
+# move_base parameters
+# Planner configuration
+controller_frequency: 5.0
+planner_patience: 5.0
+oscillation_timeout: 10.0
+base_global_planner: "navfn/NavfnROS"
+base_local_planner: "dwa_local_planner/DWAPlannerROS"
+# Global Costmap parameters
+global_costmap: 
+  global_frame: "map"
+  robot_base_frame: "base_link"
+  update_frequency: 5.0
+  publish_frequency: 2.0
+  transform_tolerance: 0.5
+  rolling_window: false
+  width: 10.0
+  height: 10.0
+  resolution: 0.05
+  static_map: true
+  plugins: 
+    - {name: "obstacle_layer", type: "costmap_2d::ObstacleLayer"} 
+    - {name: "inflation_layer", type: "costmap_2d::InflationLayer"}
+# Local Costmap parameters 
+local_costmap: 
+  global_frame: "odom"
+  robot_base_frame: "base_link"
+  update_frequency: 5.0
+  publish_frequency: 2.0
+  transform_tolerance: 0.5
+  rolling_window: true
+  width: 4.0 
+  height: 4.0
+  resolution: 0.05
+  static_map: false
+  plugins: 
+    - {name: "obstacle_layer", type: "costmap_2d::ObstacleLayer"} 
+    - {name: "inflation_layer", type: "costmap_2d::InflationLayer"}
+# Recovery behaviors
+recovery_behaviors: 
+  - {name: "rotate_recovery", type: "rotate_recovery/RotateRecovery"} 
+  - {name: "clear_costmap_recovery", type: "clear_costmap_recovery/ClearCostmapRecovery"}
