@@ -12,7 +12,10 @@ import {
   Tabs,
   CircularProgress,
   Typography,
+  IconButton
 } from '@mui/material'
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import EventNoteIcon from '@mui/icons-material/EventNote';
 
 import ReportTable from '@/components/shared/reportTabe'
 
@@ -456,6 +459,16 @@ function PatientId({ params }: { params: { patientId: string } }) {
       {/* Current Date in the top-right corner */}
       <Box sx={{ position: "absolute", top: 16, right: 16 }}>
         <Typography variant="h6">{currentDate}</Typography>
+        <IconButton
+          sx={{ marginTop: 2, display: "flex", alignItems: "center" }}
+          // onClick={navigateToMonthData} // Uncomment this if you want to add the navigation logic
+          aria-label="view-month-data"
+        >
+          <EventNoteIcon fontSize="large" />
+          <Typography variant="body1" sx={{ marginLeft: 1 }}>
+            ผลรายงานช่วง 1 เดือน
+          </Typography>
+        </IconButton>
       </Box>
       {loading ? (
         <Box
