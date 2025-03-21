@@ -14,7 +14,6 @@ import {
   Typography,
   IconButton
 } from '@mui/material'
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import EventNoteIcon from '@mui/icons-material/EventNote';
 
 import ReportTable from '@/components/shared/reportTabe'
@@ -416,6 +415,12 @@ function PatientId({ params }: { params: { patientId: string } }) {
     } 
     router.push(`${pathname}/${videoDate}`)
   }
+  const handleMonthDataClick = () => {
+    // Include the patientId in the URL
+    const currpatientId = patientName[0].CID;
+    console.log('ID'+ currpatientId)
+    router.push(`${pathname}/MonthSummary/${currpatientId}`);
+  }
 
   let dayActivityTable: GroupedActivities | undefined = {}
 
@@ -461,7 +466,7 @@ function PatientId({ params }: { params: { patientId: string } }) {
         <Typography variant="h6">{currentDate}</Typography>
         <IconButton
           sx={{ marginTop: 2, display: "flex", alignItems: "center" }}
-          // onClick={navigateToMonthData} // Uncomment this if you want to add the navigation logic
+          onClick={handleMonthDataClick} // Uncomment this if you want to add the navigation logic
           aria-label="view-month-data"
         >
           <EventNoteIcon fontSize="large" />
