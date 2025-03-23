@@ -417,9 +417,7 @@ function PatientId({ params }: { params: { patientId: string } }) {
   }
   const handleMonthDataClick = () => {
     // Include the patientId in the URL
-    const currpatientId = patientName[0].CID;
-    console.log('ID'+ currpatientId)
-    router.push(`${pathname}/MonthSummary/${currpatientId}`);
+    router.push(`${pathname}/MonthSummary/${params.patientId}`);
   }
 
   let dayActivityTable: GroupedActivities | undefined = {}

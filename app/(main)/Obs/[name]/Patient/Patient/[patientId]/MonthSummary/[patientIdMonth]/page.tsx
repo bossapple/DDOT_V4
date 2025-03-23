@@ -6,7 +6,7 @@ import { GraphQLClientConnector } from '@/app/lib/API'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Label } from 'recharts'
 import { Paper, Box, CircularProgress, Typography, IconButton } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'; // Import the back arrow icon
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 
 // Example data for the Pie charts
 const circleData1 = {
@@ -26,44 +26,36 @@ const circleData2 = {
   ]
 }
 
-function PatientIdSummary({ params }: { params: { userId: string, name: string } }) {
+interface PatientNameType {
+  CID: string
+  Firstname: string
+  Lastname: string
+}
+
+function PatientIdSummary() {
   const graphQLClient = GraphQLClientConnector()
   const router = useRouter()
-  const pathname = usePathname()
 
-  const [patientName, setPatientName] = useState<{ CID: string, Firstname: string, Lastname: string } | null>(null)
+  // Use useParams to extract parameters from the URL
+  const { name, patientId, patientIdMonth } = useParams() // Extract dynamic params from the URL
 
-  // Fetch the patient’s name using the userId
-  useEffect(() => {
-    console.log("Patient ID from params:", params.userId);
-    const fetchPatientName = async () => {
-      try {
-        const data = await graphQLClient.request<{ Userinfo: { CID: string, Firstname: string, Lastname: string }[] }>(`
-          query GetPatientInfo($cid: String) {
-            Userinfo(CID: $cid) {
-              CID
-              Firstname
-              Lastname
-            }
-          }
-        `, {
-          cid: params.userId // Ensure this is the correct user ID for the query
-        })
-  
-        if (data.Userinfo && data.Userinfo[0]) {
-          setPatientName(data.Userinfo[0]) // Store the patient name
-        }
-      } catch (error) {
-        console.error('Failed to fetch patient name:', error)
+  // State to store the patient's name and ID
+  const [patientName, setPatientName] = useState<PatientNameType | null>(null)
+
+  // GraphQL query to fetch patient info
+  const GET_USER = gql`
+    query Userinfo($cid: String) {
+      Userinfo(CID: $cid) {
+        CID
+        Firstname
+        Lastname
       }
     }
-  
-    fetchPatientName()
-  }, [params.userId]) // Dependency on userId to fetch the correct data
+  `;
 
   // Function to navigate back to the previous page
   const handleBackClick = () => {
-    router.push(`/Obs/${params.name}/Patient/Patient/${params.userId}`); // Correct the navigation path
+    router.push(`/Obs/${name}/Patient/Patient/${patientId}`); // Correct the navigation path
   }
 
   // Sample data for missing days and side effects
@@ -82,11 +74,32 @@ function PatientIdSummary({ params }: { params: { userId: string, name: string }
     "side effect C Date D/M/Y",
     "side effect D Date D/M/Y"
   ])
-  // Verify that the correct userId is being passed
-  console.log('Expected userId:', params.userId);
 
-// Use this `params.userId` or a correct identifier to fetch data
+  // Verify the params are correctly extracted
+  console.log('Extracted userId:', patientId) // Debug: Log the userId
 
+  // Fetch patient information based on userId passed from the URL
+  useEffect(() => {
+    if (!patientId) return // If patientId is not provided, do not run the query
+
+    const fetchPatientName = async () => {
+      try {
+
+        const { Userinfo } = await graphQLClient.request<{ Userinfo: PatientNameType[] }>(GET_USER, {
+          cid: patientId // Pass the correct patientId to the query
+        })
+
+        if (Userinfo && Userinfo[0]) {
+          console.log('Fetched patient:', Userinfo[0]) // Debug: Log fetched data
+          setPatientName(Userinfo[0]) // Set the patient's information
+        }
+      } catch (error) {
+        console.error('Failed to fetch patient name:', error)
+      }
+    }
+
+    fetchPatientName()
+  }, [patientId]); // Fetch when `patientId` changes
 
   return (
     <Paper sx={{ minHeight: "90vh", padding: "28px", maxWidth: "1080px" }}>
