@@ -405,21 +405,49 @@ function PatientId({ params }: { params: { patientId: string } }) {
     const fetchPatientName = async () => {
       try {
         const graphQLClient = GraphQLClientConnector();  // Initialize GraphQL client
-        const patientName = await graphQLClient.request<{ Userinfo: PatientNameType[] }>(GET_PATIENT_NAME, {
-            cid: params.patientId
-          })
-          
-        setPatientName(patientName.Userinfo);
+        const patientNameData = await graphQLClient.request<{ Userinfo: PatientNameType[] }>(GET_PATIENT_NAME, {
+          cid: params.patientId
+        });
+  
+        // Process the patient data to format DOB
+        const patientData = patientNameData.Userinfo[0];  // Assuming we only have one patient in the array
+  
+        // Format DOB if it's available
+        if (patientData?.DOB) {
+          let formattedDOB;
+          if (patientData.DOB instanceof Date) {
+            formattedDOB = patientData.DOB.toLocaleDateString('th-TH', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            });
+          } else {
+            // If DOB is a string or timestamp, convert it to Date
+            formattedDOB = new Date(parseInt(patientData.DOB)).toLocaleDateString('th-TH', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            });
+          }
+  
+          // Update the DOB field in the patientData (for rendering)
+          patientData.DOB = formattedDOB;
+        }
+  
+        // Set the patient name data in the state
+        setPatientName(patientNameData.Userinfo);
       } catch (error) {
         console.error('Failed to fetch patient name:', error);
       } finally {
-        setLoading(false)
+        setLoading(false); // Set loading state to false after fetching data
       }
     };
-
-    fetchPatientName(); // Call the function to fetch data
-  }, []);
   
+    fetchPatientName(); // Call the function to fetch data
+  }, []);  // Empty dependency array means this will run only once when the component mounts
+
+
+
 
   const handleVideoClick = async(videoDate: string) => {
     const formattedVideoDate = videoDate.replaceAll('-', '/').split('/').reverse().join('/')
@@ -495,7 +523,6 @@ function PatientId({ params }: { params: { patientId: string } }) {
   //   }
   //   return age;
   // }
-
   return (
     <Paper sx={{ minHeight: "90vh", padding: "28px", maxWidth: "1080px" }}>
       {/* Current Date in the top-right corner */}
@@ -561,7 +588,7 @@ function PatientId({ params }: { params: { patientId: string } }) {
               marginBottom: '20px',
             }}
           >
-            <Typography mr={1}>อายุ:</Typography>
+            <Typography mr={1}>อายุ: </Typography>
             {/* Code for age calculation*/}
             <Typography></Typography>
             <Typography mr={1}>ส่วนสูง: </Typography>
