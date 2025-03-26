@@ -45,6 +45,7 @@ interface PatientNameType {
   CID: string
   Firstname: string
   Lastname: string
+  DOB: string | Date
 }
 
 interface GroupedActivities {
@@ -158,6 +159,7 @@ function PatientId({ params }: { params: { patientId: string } }) {
         CID
         Firstname
         Lastname
+        
       }
     }
   `
@@ -282,6 +284,8 @@ function PatientId({ params }: { params: { patientId: string } }) {
 
       } catch (error: any) {
         console.log('Failed to fetch dayActivity: ', error.message);
+      } finally {
+        setLoading(false)
       }
     };
     fetchData();
@@ -300,10 +304,10 @@ function PatientId({ params }: { params: { patientId: string } }) {
           patientCid: params.patientId
         });
 
-        const patientName = await graphQLClient.request<{ Userinfo: PatientNameType[] }>(GET_PATIENT_NAME, {
-          cid: params.patientId
-        })
-
+        // const patientName = await graphQLClient.request<{ Userinfo: PatientNameType[] }>(GET_PATIENT_NAME, {
+        //   cid: params.patientId
+        // })
+        
         setPatientReport((prevReport) => ({
           ...prevReport,
           colorBlinds: colorSideData?.getColorBlind?.map((colorBlind) => ({
@@ -338,7 +342,7 @@ function PatientId({ params }: { params: { patientId: string } }) {
           }))
         }));
 
-        setPatientName(patientName.Userinfo)
+        //setPatientName(patientName.Userinfo)
 
       } catch (error: any) {
         console.log(`Failed to fetch patient report: ${error.message}`);
@@ -375,6 +379,8 @@ function PatientId({ params }: { params: { patientId: string } }) {
 
       } catch (error: any) {
         console.log(`Failed to get admission: ${error.message}`)
+      } finally {
+        setLoading(false)
       }
     }
     fetchData()
@@ -394,6 +400,26 @@ function PatientId({ params }: { params: { patientId: string } }) {
   const handleChange = (event: React.SyntheticEvent, newValue: string) => {
     setValueTab(newValue);
   };
+
+  useEffect(() => {
+    const fetchPatientName = async () => {
+      try {
+        const graphQLClient = GraphQLClientConnector();  // Initialize GraphQL client
+        const patientName = await graphQLClient.request<{ Userinfo: PatientNameType[] }>(GET_PATIENT_NAME, {
+            cid: params.patientId
+          })
+          
+        setPatientName(patientName.Userinfo);
+      } catch (error) {
+        console.error('Failed to fetch patient name:', error);
+      } finally {
+        setLoading(false)
+      }
+    };
+
+    fetchPatientName(); // Call the function to fetch data
+  }, []);
+  
 
   const handleVideoClick = async(videoDate: string) => {
     const formattedVideoDate = videoDate.replaceAll('-', '/').split('/').reverse().join('/')
@@ -456,7 +482,20 @@ function PatientId({ params }: { params: { patientId: string } }) {
     id: index + 1,
     ...item,
   })) : [];
+
+  // const calculateAge = (dob: string | Date) => {
+  //   const birthDate = new Date(dob);
+  //   const today = new Date();
+  //   let age = today.getFullYear() - birthDate.getFullYear();
+  //   const monthDifference = today.getMonth() - birthDate.getMonth();
     
+  //   // Adjust the age if the birthday hasn't occurred yet this year
+  //   if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
+  //     age--;
+  //   }
+  //   return age;
+  // }
+
   return (
     <Paper sx={{ minHeight: "90vh", padding: "28px", maxWidth: "1080px" }}>
       {/* Current Date in the top-right corner */}
@@ -509,11 +548,26 @@ function PatientId({ params }: { params: { patientId: string } }) {
             sx={{
               display: 'flex',
               alignItems: 'center',
-              marginBottom: '20px',
+              marginBottom: '10px',
             }}
           >
             <Typography mr={1}>วันที่เริ่มการรักษา:</Typography>
             <Typography>{admission.startDate instanceof Date ? admission.startDate.toLocaleDateString() : admission.startDate}</Typography>
+          </Box>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              marginBottom: '20px',
+            }}
+          >
+            <Typography mr={1}>อายุ:</Typography>
+            {/* Code for age calculation*/}
+            <Typography></Typography>
+            <Typography mr={1}>ส่วนสูง: </Typography>
+            {/*Display data from query*/}
+            <Typography mr={1}>น้ำหนัก: </Typography>
+            {/*Display data from query*/}
           </Box>
           <Box sx={{ boxShadow: 1, borderRadius: '8px' }}>
             <TabContext value={valueTab}>
