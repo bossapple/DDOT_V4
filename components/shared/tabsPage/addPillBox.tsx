@@ -19,7 +19,7 @@ import ButtonCompo from "../button";
 
 interface AddPillBoxType {
   boxID: string;
-  chipID: string;
+  simNumber: string;
   pillboxStatus: string;
 }
 
@@ -29,7 +29,7 @@ function AddPillBox() {
   const [alertMessage, setAlertMessage] = useState("");
   const [addPillBox, setAddPillBox] = useState<AddPillBoxType>({
     boxID: "",
-    chipID: "",
+    simNumber: "",
     pillboxStatus: "EMPTY",
   });
   const [isEmpty, setIsEmpty] = useState(false);
@@ -43,6 +43,7 @@ function AddPillBox() {
         localHospitalNumber
         startDate
         lastUpdate
+        simNumber
         pillboxStatus
       }
     }
@@ -57,7 +58,7 @@ function AddPillBox() {
         await addPillbox({
           variables: {
             boxId: addPillBox.boxID,
-            chipId: addPillBox.chipID,
+            simNumber: addPillBox.simNumber,
             pillboxStatus: addPillBox.pillboxStatus,
           },
         });
@@ -66,7 +67,7 @@ function AddPillBox() {
         setOpenDialog(false);
         setAddPillBox({
           boxID: "",
-          chipID: "",
+          simNumber: "",
           pillboxStatus: "EMPTY",
         });
       } catch (error: any) {
@@ -118,7 +119,7 @@ function AddPillBox() {
   };
 
   const isValidateField = () => {
-    if (addPillBox.boxID === "" || addPillBox.chipID === "") {
+    if (addPillBox.boxID === "" || addPillBox.simNumber === "") {
       setIsEmpty(true);
     } else {
       setIsEmpty(false);
@@ -128,7 +129,7 @@ function AddPillBox() {
   const handleCancel = () => {
     setAddPillBox({
       boxID: "",
-      chipID: "",
+      simNumber: "",
       pillboxStatus: "EMPTY",
     });
   };
@@ -174,14 +175,14 @@ function AddPillBox() {
           </Typography>
         </Grid>
 
-        {/* ChipID input */}
+        {/* simNumber input */}
         <Grid item xs={12} md={12} mb={2} sx={{ display: "flex", alignItems: "center" }}>
           <TextField
             label="กรอกรหัสชิป"
             required
-            name="chipID"
+            name="simNumber"
             sx={{ maxWidth: 508, width: "100%" }}
-            value={addPillBox.chipID}
+            value={addPillBox.simNumber}
             // onInput={(event) => {
             //   const inputValue = (event.target as HTMLInputElement).value;
             //   const sanitizedValue = inputValue.replace(/\D/g, ''); // Remove non-digit characters

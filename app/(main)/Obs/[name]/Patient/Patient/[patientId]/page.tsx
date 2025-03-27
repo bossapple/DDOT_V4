@@ -45,7 +45,7 @@ interface PatientNameType {
   CID: string
   Firstname: string
   Lastname: string
-  DOB: string | Date
+  dob: Date
 }
 
 interface GroupedActivities {
@@ -159,7 +159,7 @@ function PatientId({ params }: { params: { patientId: string } }) {
         CID
         Firstname
         Lastname
-        
+        dob
       }
     }
   `
@@ -413,26 +413,26 @@ function PatientId({ params }: { params: { patientId: string } }) {
         const patientData = patientNameData.Userinfo[0];  // Assuming we only have one patient in the array
   
         // Format DOB if it's available
-        if (patientData?.DOB) {
-          let formattedDOB;
-          if (patientData.DOB instanceof Date) {
-            formattedDOB = patientData.DOB.toLocaleDateString('th-TH', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            });
-          } else {
-            // If DOB is a string or timestamp, convert it to Date
-            formattedDOB = new Date(parseInt(patientData.DOB)).toLocaleDateString('th-TH', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            });
-          }
+        // if (patientData?.DOB) {
+        //   let formattedDOB;
+        //   if (patientData.DOB instanceof Date) {
+        //     formattedDOB = patientData.DOB.toLocaleDateString('th-TH', {
+        //       year: 'numeric',
+        //       month: 'long',
+        //       day: 'numeric',
+        //     });
+        //   } else {
+        //     // If DOB is a string or timestamp, convert it to Date
+        //     formattedDOB = new Date(parseInt(patientData.DOB)).toLocaleDateString('th-TH', {
+        //       year: 'numeric',
+        //       month: 'long',
+        //       day: 'numeric',
+        //     });
+        //   }
   
           // Update the DOB field in the patientData (for rendering)
-          patientData.DOB = formattedDOB;
-        }
+        //   patientData.DOB = formattedDOB;
+        // }
   
         // Set the patient name data in the state
         setPatientName(patientNameData.Userinfo);
@@ -511,18 +511,25 @@ function PatientId({ params }: { params: { patientId: string } }) {
     ...item,
   })) : [];
 
-  // const calculateAge = (dob: string | Date) => {
-  //   const birthDate = new Date(dob);
-  //   const today = new Date();
-  //   let age = today.getFullYear() - birthDate.getFullYear();
-  //   const monthDifference = today.getMonth() - birthDate.getMonth();
-    
-  //   // Adjust the age if the birthday hasn't occurred yet this year
-  //   if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
-  //     age--;
-  //   }
-  //   return age;
-  // }
+  const calculateAge = (dob: string | Date) => {
+    const birthDate = new Date(dob); // Convert dob to Date if it's a string
+    const today = new Date(); // Get today's date
+  
+    // Calculate age by subtracting birth year from current year
+    let age = today.getFullYear() - birthDate.getFullYear();
+  
+    const monthDifference = today.getMonth() - birthDate.getMonth();
+    const dayDifference = today.getDate() - birthDate.getDate();
+  
+    // Adjust if the birthday has not occurred yet this year
+    if (monthDifference < 0 || (monthDifference === 0 && dayDifference < 0)) {
+      age--; // Subtract 1 if the birthday hasn't occurred yet
+    }
+  
+    return age;
+  };
+  
+
   return (
     <Paper sx={{ minHeight: "90vh", padding: "28px", maxWidth: "1080px" }}>
       {/* Current Date in the top-right corner */}
@@ -590,11 +597,15 @@ function PatientId({ params }: { params: { patientId: string } }) {
           >
             <Typography mr={1}>อายุ: </Typography>
             {/* Code for age calculation*/}
-            <Typography></Typography>
+            <Typography sx={{ mr: 1}}>{calculateAge((patientName[0]?.dob))}</Typography>
+
             <Typography mr={1}>ส่วนสูง: </Typography>
             {/*Display data from query*/}
+            <Typography sx={{ mr: 1}}>Height</Typography>
+
             <Typography mr={1}>น้ำหนัก: </Typography>
             {/*Display data from query*/}
+            <Typography sx={{ mr: 1}}>Weight</Typography>
           </Box>
           <Box sx={{ boxShadow: 1, borderRadius: '8px' }}>
             <TabContext value={valueTab}>

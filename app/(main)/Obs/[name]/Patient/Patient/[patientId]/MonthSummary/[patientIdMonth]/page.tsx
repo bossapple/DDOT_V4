@@ -111,14 +111,14 @@ function PatientIdSummary() {
           sx={{ color: "black", marginRight: 1 }} // Add margin to separate the icon and text
         >
           <ArrowBackIcon fontSize="large" />
+        <Typography variant="h6" sx={{ color: "black" }}>ย้อนกลับ</Typography> {/* Text next to the icon */}
         </IconButton>
-        <Typography variant="h6" sx={{ color: "black" }}>Back to Previous</Typography> {/* Text next to the icon */}
       </Box>
 
       {/* Patient's ID and Name at the top */}
       <Box sx={{ marginBottom: "20px" }}>
         {patientName ? (
-          <Typography variant="h5">{`ID: ${patientName.CID} - ${patientName.Firstname} ${patientName.Lastname}`}</Typography>
+          <Typography variant="h5">{`ชื่อ: ${patientName.Firstname} นามสกุล: ${patientName.Lastname}`}</Typography>
         ) : (
           <CircularProgress />
         )}
@@ -136,11 +136,11 @@ function PatientIdSummary() {
               <Tooltip />
             </PieChart>
           </ResponsiveContainer>
-          <Typography variant="h6" sx={{ marginTop: "8px" }}>ผลรายงานการกินยา</Typography>
+          <Typography variant="h5" sx={{ marginTop: "8px" }}>ผลรายงานการกินยา</Typography>
 
           {/* Day Missing Section for Graph 1 */}
           <Box sx={{ marginTop: 4 }}>
-            <Typography variant="h5" sx={{ marginBottom: 2 }}>วันที่ไม่ได้ทานยา</Typography>
+            <Typography variant="h6" sx={{ marginBottom: 2 }}>วันที่ไม่ได้ทานยา</Typography>
             {missingDays.map((day, index) => (
               <Typography key={index} variant="body1">{day}</Typography>
             ))}
@@ -160,11 +160,11 @@ function PatientIdSummary() {
               <Tooltip />
             </PieChart>
           </ResponsiveContainer>
-          <Typography variant="h6" sx={{ marginTop: "8px" }}>ผลข้างเคียงที่เกิดขึ้น</Typography>
+          <Typography variant="h5" sx={{ marginTop: "8px" }}>ผลข้างเคียงที่เกิดขึ้น</Typography>
 
           {/* Side Effects Section for Graph 2 */}
           <Box sx={{ marginTop: 4 }}>
-            <Typography variant="h5" sx={{ marginBottom: 2 }}>วันที่เกิดผลข้างเคียง</Typography>
+            <Typography variant="h6" sx={{ marginBottom: 2 }}>วันที่เกิดผลข้างเคียง</Typography>
             {sideEffects.map((effect, index) => (
               <Typography key={index} variant="body1">{effect}</Typography>
             ))}
