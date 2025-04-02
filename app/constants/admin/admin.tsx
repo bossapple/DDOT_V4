@@ -30,6 +30,12 @@ export const ADMIN = [
     label: 'ข้อมูลคนไข้ทั้งหมด',
     route: '/Admin/undefined/Patient'
   },
+  {
+    imgURL: '/images/icon-pillbox.svg',
+    imgClickURL: '/images/click-icon-pillbox.svg',
+    label: 'ข้อมูลคนกล่องยาทั้งหมด',
+    route: '/Admin/undefined/Pillbox'
+  },
   // {
   //   imgURL: '/images/view-as-icon.svg',
   //   label: 'มุมมองของผู้ดูแล',

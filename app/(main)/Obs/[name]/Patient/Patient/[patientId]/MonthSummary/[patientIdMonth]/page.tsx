@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react'
 import { gql } from '@apollo/client'
 import { GraphQLClientConnector } from '@/app/lib/API'
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Label } from 'recharts'
-import { Paper, Box, CircularProgress, Typography, IconButton } from '@mui/material'
-import ArrowBackIcon from '@mui/icons-material/ArrowBack'; // Import the back arrow icon
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
+import { Paper, Box, CircularProgress, Typography, IconButton, Select, MenuItem, InputLabel, FormControl } from '@mui/material'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useRouter, useParams } from 'next/navigation'
 
 // Example data for the Pie charts
@@ -26,6 +26,7 @@ const circleData2 = {
   ]
 }
 
+
 interface PatientNameType {
   CID: string
   Firstname: string
@@ -41,6 +42,7 @@ function PatientIdSummary() {
 
   // State to store the patient's name and ID
   const [patientName, setPatientName] = useState<PatientNameType | null>(null)
+  const [selectedMonth, setSelectedMonth] = useState<string>('2025-01')
 
   // GraphQL query to fetch patient info
   const GET_USER = gql`
@@ -101,6 +103,13 @@ function PatientIdSummary() {
     fetchPatientName()
   }, [patientId]); // Fetch when `patientId` changes
 
+  const handleMonthChange = (event: any) => {
+    setSelectedMonth(event.target.value)
+    // Trigger data reload for the selected month
+    console.log('Selected Month:', event.target.value) // Log the selected month
+    // You can now fetch the corresponding data based on the selected month
+  }
+
   return (
     <Paper sx={{ minHeight: "90vh", padding: "28px", maxWidth: "1080px" }}>
       {/* Back Icon Button at the top-right corner with text */}
@@ -114,7 +123,24 @@ function PatientIdSummary() {
         <Typography variant="h6" sx={{ color: "black" }}>ย้อนกลับ</Typography> {/* Text next to the icon */}
         </IconButton>
       </Box>
-
+      {/* Month Selection */}
+      <Box sx={{ marginBottom: '20px', display: 'flex', alignItems: 'center' }}>
+        <FormControl sx={{ minWidth: 120 }}>
+          <InputLabel>เลือกเดือน</InputLabel>
+          <Select
+            value={selectedMonth}
+            label="เลือกเดือน"
+            onChange={handleMonthChange}
+          >
+            {/* Example months, you can generate this dynamically based on available data */}
+            <MenuItem value="2025-01">มกราคม 2025</MenuItem>
+            <MenuItem value="2025-02">กุมภาพันธ์ 2025</MenuItem>
+            <MenuItem value="2025-03">มีนาคม 2025</MenuItem>
+            <MenuItem value="2025-04">เมษายน 2025</MenuItem>
+            {/* Add more months as needed */}
+          </Select>
+        </FormControl>
+      </Box>
       {/* Patient's ID and Name at the top */}
       <Box sx={{ marginBottom: "20px" }}>
         {patientName ? (

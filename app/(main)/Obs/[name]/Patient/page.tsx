@@ -243,7 +243,7 @@ const CustomTooltip = ({ active, payload }: any) => {
             </IconButton>
           </Box>
 
-          {/* Circle Graphs */}
+          {/* Report dashboard graph */}
           <Box sx={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
             <Box sx={{ width: "30%", display: "flex", flexDirection: "column", alignItems: "center" }}>
               <ResponsiveContainer width="100%" height={220}>
@@ -304,6 +304,7 @@ const CustomTooltip = ({ active, payload }: any) => {
 
           {/* Search Bar */}
           <SearchBar />
+          {/* Patient data table*/}
           <DataGridTable row={patientInfo} column={OBSERVER_DATAGRID.columns(handleClick)} />
         </>
       )}
