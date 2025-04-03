@@ -236,7 +236,7 @@ function ObserverPage() {
       {adminUsername[0]?.Firstname || "ไม่พบชื่อ"}
     </Typography>
     <Typography variant="h6">
-      {adminUsername[0]?.Lastname || "ไม่พบข้อมูล"}
+      {adminUsername[0]?.Lastname || "ไม่พบนามสกุล"}
     </Typography>
   </Box>
 

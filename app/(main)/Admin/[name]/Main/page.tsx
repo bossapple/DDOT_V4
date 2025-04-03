@@ -98,7 +98,7 @@ function Main() {
             {userInfo[0]?.Firstname || "ไม่พบชื่อ"}
           </Typography>
           <Typography variant="h6">
-            {userInfo[0]?.Lastname || "ไม่พบข้อมูล"}
+            {userInfo[0]?.Lastname || "ไม่พบนามกุล"}
           </Typography>
         </Box>
         <IconButton sx={{ bgcolor: "grey.300", width: 40, height: 40 }} onClick={handleAvatarClick}>
