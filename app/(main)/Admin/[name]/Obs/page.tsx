@@ -216,8 +216,44 @@ function ObserverPage() {
     province: user.province
   }))
 
+  const formatThaiDateLong = (date: Date): string => {
+    return date.toLocaleDateString('th-TH', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  const getAdminName = () => {
+    if (loading && adminUsername.length === 0) {
+        return "กำลังโหลด..."; // Indicate loading specifically for the name
+    }
+    if (adminUsername.length > 0) {
+      const admin = adminUsername[0];
+      // Provide fallbacks for potentially missing names
+      const firstName = admin.Firstname || "ไม่พบชื่อ";
+      const lastName = admin.Lastname || "ไม่พบนามสกุล";
+      return `${firstName} ${lastName}`;
+    }
+    return "ไม่พบข้อมูลผู้ใช้"; // Clearer message if fetch completed but no data
+  };
+
   return (
     <>
+    <Box
+    sx={{
+      display: 'flex',
+      justifyContent: 'flex-end',
+      alignItems: 'center',
+      width: '100%',
+      padding: '12px 24px',
+      boxSizing: 'border-box',
+    }}>
+      <Typography variant="h6" color="text.primary">
+        {formatThaiDateLong(new Date())}
+      </Typography>
+    </Box>
       <Box
   sx={{
     display: "flex",
@@ -228,15 +264,12 @@ function ObserverPage() {
   }}
 >
   {/* Admin Name Section */}
-  <Box sx={{ display: "flex", alignItems: "center" }}>
-    <Typography mr="12px" variant="h6">
+  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+    <Typography variant="h6" component="span">
       ชื่อผู้ใช้:
     </Typography>
-    <Typography variant="h6" mr="12px">
-      {adminUsername[0]?.Firstname || "ไม่พบชื่อ"}
-    </Typography>
-    <Typography variant="h6">
-      {adminUsername[0]?.Lastname || "ไม่พบนามสกุล"}
+    <Typography variant="h6" component="span" fontWeight="medium">
+      {getAdminName()}
     </Typography>
   </Box>
 

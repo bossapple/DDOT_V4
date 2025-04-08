@@ -78,6 +78,29 @@ function Main() {
      router.push(`${pathname}/${userId}`);
    };
 
+   const formatThaiDateLong = (date: Date): string => {
+    return date.toLocaleDateString('th-TH', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  const getAdminName = () => {
+    if (loading && userInfo.length === 0) {
+        return "กำลังโหลด..."; // Indicate loading specifically for the name
+    }
+    if (userInfo.length > 0) {
+      const admin = userInfo[0];
+      // Provide fallbacks for potentially missing names
+      const firstName = admin.Firstname || "ไม่พบชื่อ";
+      const lastName = admin.Lastname || "ไม่พบนามสกุล";
+      return `${firstName} ${lastName}`;
+    }
+    return "ไม่พบข้อมูลผู้ใช้"; // Clearer message if fetch completed but no data
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "80vh" }}>
@@ -89,18 +112,28 @@ function Main() {
   // Main interface
   return (
     <>
+    <Box
+    sx={{
+      display: 'flex',
+      justifyContent: 'flex-end',
+      alignItems: 'center',
+      width: '100%',
+      padding: '12px 24px',
+      boxSizing: 'border-box',
+    }}>
+      <Typography variant="h6" color="text.primary">
+        {formatThaiDateLong(new Date())}
+      </Typography>
+    </Box>
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px", width: "100%" }}>
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          <Typography mr="12px" variant="h6">
-            ชื่อผู้ใช้:
-          </Typography>
-          <Typography variant="h6" mr="12px">
-            {userInfo[0]?.Firstname || "ไม่พบชื่อ"}
-          </Typography>
-          <Typography variant="h6">
-            {userInfo[0]?.Lastname || "ไม่พบนามกุล"}
-          </Typography>
-        </Box>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Typography variant="h6" component="span">
+          ชื่อผู้ใช้:
+        </Typography>
+        <Typography variant="h6" component="span" fontWeight="medium">
+          {getAdminName()}
+        </Typography>
+      </Box>
         <IconButton sx={{ bgcolor: "grey.300", width: 40, height: 40 }} onClick={handleAvatarClick}>
           <Avatar sx={{ bgcolor: "primary.main", width: 36, height: 36 }}>
             <AccountCircleIcon />

@@ -218,6 +218,16 @@ function PillboxPage() {
       day: '2-digit',
     });
   
+    const formatThaiDateLong = (date: Date): string => {
+      return date.toLocaleDateString('th-TH', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+    };
+    
+  
 
 
   // Helper to safely get admin name parts
@@ -236,40 +246,57 @@ function PillboxPage() {
   };
 
   // --- JSX Return ---
-  return (
-    <>
-      {/* Header Section */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 2,
-          width: "100%",
-        }}
-      >
-        {/* Admin Name Display */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Typography variant="h6" component="span">
-            ชื่อผู้ใช้:
-          </Typography>
-          <Typography variant="h6" component="span" fontWeight="medium">
-            {getAdminName()}
-          </Typography>
-        </Box>
+  // --- JSX Return ---
+return (
+  <>
+    {/* Header Section */}
+    <Box
+    sx={{
+      display: 'flex',
+      justifyContent: 'flex-end',
+      alignItems: 'center',
+      width: '100%',
+      padding: '12px 24px',
+      boxSizing: 'border-box',
+    }}>
+      <Typography variant="h6" color="text.primary">
+        {formatThaiDateLong(new Date())}
+      </Typography>
+    </Box>
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: 2,
+        width: "100%",
+      }}
+    >
+      {/* Admin Name Display */}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Typography variant="h6" component="span">
+          ชื่อผู้ใช้:
+        </Typography>
+        <Typography variant="h6" component="span" fontWeight="medium">
+          {getAdminName()}
+        </Typography>
+      </Box>
 
-        {/* Profile Avatar Button */}
+      {/* Right-side content: Current Date + Avatar */}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
         <IconButton
           aria-label="account of current user"
           onClick={handleAvatarClick}
           sx={{ p: 0 }}
-          disabled={adminUsername.length === 0} // Disable if no admin data yet
+          disabled={adminUsername.length === 0}
         >
           <Avatar sx={{ bgcolor: "primary.main", width: 40, height: 40 }}>
             <AccountCircleIcon />
           </Avatar>
         </IconButton>
       </Box>
+    </Box>
+
 
       {/* Main Content Area */}
       <Paper sx={{ minHeight: "85vh", padding: 3, width: '100%', maxWidth: "1080px", margin: '0 auto' }}>
