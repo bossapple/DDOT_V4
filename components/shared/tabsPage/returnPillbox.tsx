@@ -13,6 +13,7 @@ import {
   DialogTitle,
   Snackbar,
   Alert,
+  InputAdornment,
 } from "@mui/material";
 
 import ButtonCompo from '../button';
@@ -139,7 +140,7 @@ function ReturnPillbox() {
         <Grid item xs={12} md={12} mb={2}>
           <Typography mb={1}>เลขบัตรประจำตัวประชาชนผู้ป่วย</Typography>
           <TextField
-            label="กรอกเลขประจำตัวประชาชนผู้ป่าวย"
+            label="กรอกเลขประจำตัวประชาชนผู้ป่วย"
             sx={{ maxWidth: 508, width: "100%" }}
             name='patientCID'
             type='number'
@@ -165,6 +166,9 @@ function ReturnPillbox() {
             onChange={(event) => handleChange(event.target.name, event.target.value)}
             error={isEmpty.boxID}
             helperText={isEmpty.boxID ? 'กรุณากรอกรหัสเลขกล่องยา' : ' '}
+            InputProps={{
+              endAdornment: <InputAdornment position="end">📦 ตัวอย่าง: pb0001</InputAdornment>,
+            }}
           />
         </Grid>
         <Grid item xs={12} md={12} mb={2}>

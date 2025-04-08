@@ -15,21 +15,35 @@ export const PILLBOX_DATAGRID = {
       minWidth: 100,
       flex: 1
     },
+    {
+      field: 'localHospitalNumber',
+      headerClassName: 'super-app-theme--header',
+      headerName: 'Hospital Number',
+      width: 180,
+      minWidth: 150,
+      flex: 1
+    },
     // {
-    //   field: 'localHospitalNumber',
+    //   field: 'simNumber',
     //   headerClassName: 'super-app-theme--header',
-    //   headerName: 'Hospital Number',
-    //   width: 180,
-    //   minWidth: 150,
+    //   headerName: 'เลขซิมการ์ด',
+    //   width: 150,
+    //   minWidth: 120,
     //   flex: 1
     // },
     {
-      field: 'simNumber',
+      field: 'startDate',
       headerClassName: 'super-app-theme--header',
-      headerName: 'เลขซิมการ์ด',
-      width: 150,
-      minWidth: 120,
-      flex: 1
+      headerName: 'วันที่เริ่มใช้',
+      width: 100,
+      minWidth: 100,
+    },
+    {
+      field: 'lastUpdate',
+      headerClassName: 'super-app-theme--header',
+      headerName: 'อัปเดตสถาณะครั้งล่าสุด',
+      width: 120,
+      minWidth: 100,
     },
     {
       field: 'pillboxStatus',
@@ -40,66 +54,52 @@ export const PILLBOX_DATAGRID = {
       flex: 1
     },
     // {
-    //   field: 'startDate',
+    //   field: 'currentLocation',
     //   headerClassName: 'super-app-theme--header',
-    //   headerName: 'วันที่เริ่มใช้',
-    //   width: 100,
-    //   minWidth: 100,
+    //   headerName: 'ตำแหน่งปัจจุบัน',
+    //   width: 150,
+    //   minWidth: 120,
+    //   flex: 1
     // },
     // {
-    //   field: 'lastUpdate',
+    //   field: 'edit',
     //   headerClassName: 'super-app-theme--header',
-    //   headerName: 'อัปเดตสถาณะครั้งล่าสุด',
-    //   width: 120,
-    //   minWidth: 100,
+    //   headerName: 'แก้ไข',
+    //   width: 80,
+    //   minWidth: 80,
+    //   flex: 0.5,
+    //   renderCell: (params: any) => (
+    //     <Button variant="outlined" onClick={() => onClickEdit(params)}>
+    //       แก้ไข
+    //     </Button>
+    //   )
     // },
-    {
-      field: 'currentLocation',
-      headerClassName: 'super-app-theme--header',
-      headerName: 'ตำแหน่งปัจจุบัน',
-      width: 150,
-      minWidth: 120,
-      flex: 1
-    },
-    {
-      field: 'edit',
-      headerClassName: 'super-app-theme--header',
-      headerName: 'แก้ไข',
-      width: 80,
-      minWidth: 80,
-      flex: 0.5,
-      renderCell: (params: any) => (
-        <Button variant="outlined" onClick={() => onClickEdit(params)}>
-          แก้ไข
-        </Button>
-      )
-    },
   ]
-  if(onClickDelete) {
-    formmatedColumns.push(({
-      field: 'delete',
-      headerClassName: 'super-app-theme--header',
-      headerName: 'ลบกล่องนี้',
-      width: 80,
-      minWidth: 80,
-      flex: 0.5,
-      renderCell: (params: any) => (
-        <Button
-          variant='outlined'
-          sx={{
-            backgroundColor: 'rgb(204,51,0)',
-            color: 'white',
-            '&:hover': {
-              backgroundColor: 'rgb(240,44,44)',
-            },
-          }}
-          onClick={() => onClickDelete(params)}
-        >
-          ลบ
-        </Button>
-      ),
-    }))
-  }
+  // if(onClickDelete) {
+  //   formmatedColumns.push(({
+  //     field: 'delete',
+  //     headerClassName: 'super-app-theme--header',
+  //     headerName: 'ลบกล่องนี้',
+  //     width: 80,
+  //     minWidth: 80,
+  //     flex: 0.5,
+  //     renderCell: (params: any) => (
+  //       <Button
+  //         variant='outlined'
+  //         sx={{
+  //           backgroundColor: 'rgb(204,51,0)',
+  //           color: 'white',
+  //           '&:hover': {
+  //             backgroundColor: 'rgb(240,44,44)',
+  //           },
+  //         }}
+  //         onClick={() => onClickDelete(params)}
+  //       >
+  //         ลบ
+  //       </Button>
+  //     ),
+  //   }))
+  // }
   return formmatedColumns
 }
 };

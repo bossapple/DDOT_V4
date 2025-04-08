@@ -24,23 +24,23 @@ export const ADMIN_DATAGRID = {
         headerName: 'ID',
         width: 100,
         minWidth: 100,
-        flex: 0.6
+        flex: 0.8
       },
       {
         field: 'Firstname',
         headerClassName: 'super-app-theme--header',
         headerName: 'ชื่อจริง',
         width: 100,
-        minWidth: 100,
-        flex: 1
+        minWidth: 60,
+        flex: 0.6
       },
       {
         field: 'Lastname',
         headerClassName: 'super-app-theme--header',
         headerName: 'นามสกุล',
         width: 100,
-        minWidth: 100,
-        flex: 1
+        minWidth: 60,
+        flex: 0.6
       },
       {
         field: 'Gender',
@@ -48,6 +48,7 @@ export const ADMIN_DATAGRID = {
         headerName: 'เพศ',
         width: 60,
         minWidth: 60,
+        flex: 0.5
       },
       {
         field: 'dob',
@@ -55,6 +56,7 @@ export const ADMIN_DATAGRID = {
         headerName: 'วันเกิด',
         width: 100,
         minWidth: 100,
+        flex: 0.5
       },
       {
         field: 'userRole',
@@ -62,6 +64,7 @@ export const ADMIN_DATAGRID = {
         headerName: 'ประเภท',
         width: 100,
         minWidth: 100,
+        flex: 0.5
       },
       {
         field: 'province',
@@ -69,6 +72,7 @@ export const ADMIN_DATAGRID = {
         headerName: 'จังหวัด',
         width: 80,
         minWidth: 80,
+        flex: 0.5
       },
       {
         field: 'edit',

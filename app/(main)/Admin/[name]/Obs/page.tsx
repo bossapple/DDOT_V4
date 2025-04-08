@@ -114,7 +114,7 @@ function ObserverPage() {
   
         const formattedData: UserInfoType[] = observerData.map((prevObserver) => ({
           ...prevObserver,
-          dob: new Date(prevObserver.dob).toLocaleDateString(undefined, {
+          dob: new Date(prevObserver.dob).toLocaleDateString('th-TH', {
             year: "numeric",
             month: "2-digit",
             day: "2-digit",

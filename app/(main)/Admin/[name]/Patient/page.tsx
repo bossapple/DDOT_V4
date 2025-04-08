@@ -89,7 +89,7 @@ function PatientPage() {
   
         const formattedData: UserInfoType[] = patientData.map((prevPatient) => ({
           ...prevPatient,
-          dob: new Date(prevPatient.dob).toLocaleDateString(undefined, {
+          dob: new Date(prevPatient.dob).toLocaleDateString('th-TH', {
             year: "numeric",
             month: "2-digit",
             day: "2-digit"

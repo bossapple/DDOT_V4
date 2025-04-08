@@ -13,6 +13,7 @@ import {
   DialogTitle,
   Snackbar,
   Alert,
+  InputAdornment,
 } from "@mui/material";
 
 import ButtonCompo from "../button";
@@ -189,6 +190,9 @@ function PairPatientWithBox() {
             onChange={(event) => handleChange(event.target.name, event.target.value)}
             error={isEmpty.boxID}
             helperText={isEmpty.boxID ? 'กรุณากรอกรหัสกล่องยา' : ' '}
+            InputProps={{
+              endAdornment: <InputAdornment position="end">📦 ตัวอย่าง: pb0001</InputAdornment>,
+            }}
           />
         </Grid>
         <Grid item xs={12} md={6} sx={{ display: "flex", gap: "16px" }}>

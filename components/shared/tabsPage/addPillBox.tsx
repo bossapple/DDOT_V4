@@ -98,7 +98,7 @@ function AddPillBox() {
   // Validate boxID after the user stops typing
   useEffect(() => {
     if (!isTyping) {
-      const boxIDPattern = /^Pillbox\d{3}$/; // Must be "Pillbox" + 3 digits
+      const boxIDPattern = /^pb\d{4}$/; // Must be "pb" + 4 digits
       setBoxIDError(addPillBox.boxID !== "" && !boxIDPattern.test(addPillBox.boxID));
     }
   }, [isTyping, addPillBox.boxID]);
@@ -160,11 +160,11 @@ function AddPillBox() {
             error={!isTyping && boxIDError} // Show error only when user stops typing
             helperText={
               !isTyping && boxIDError
-                ? "รูปแบบต้องเป็น PillboxXXX (XXX เป็นตัวเลข)"
+                ? "รูปแบบต้องเป็น pbXXXX (XXXX เป็นตัวเลข)"
                 : ""
             }
             InputProps={{
-              endAdornment: <InputAdornment position="end">📦 ตัวอย่าง: Pillbox001</InputAdornment>,
+              endAdornment: <InputAdornment position="end">📦 ตัวอย่าง: pb0001</InputAdornment>,
             }}
           />
         </Grid>

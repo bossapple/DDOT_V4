@@ -1,8 +1,9 @@
 "use client";
 
 import { gql } from "@apollo/client";
-import React, { useEffect, useState } from "react";
-import { GraphQLClientConnector } from "../../../../lib/API";
+// Import useMemo along with other React hooks
+import React, { useEffect, useState, useMemo } from "react";
+import { GraphQLClientConnector } from "../../../../lib/API"; // Adjust path if necessary
 import { useRouter, usePathname, useParams } from "next/navigation";
 import {
   Box,
@@ -11,155 +12,269 @@ import {
   Typography,
   IconButton,
   Avatar,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Button,
 } from "@mui/material";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import SearchBar from "@/components/shared/searchBar";
-import DataGridTable from "@/components/shared/dataGridTable";
-import { PILLBOX_DATAGRID } from "@/app/constants/admin/adminBoxDataGrid"; // Ensure this import is correct
+import SearchBar from "@/components/shared/searchBar"; // Adjust path if necessary
 
-// Example query to fetch Pillbox data
+// Define the interface for Pillbox data
+export interface Pillbox {
+  boxID: string;
+  localHospitalNumber: string;
+  simNumber?: string; // Optional based on original query
+  pillboxStatus: string;
+  startDate: string | Date; // Keep as string or Date based on API response
+  lastUpdate: string | Date; // Keep as string or Date based on API response
+  currentLocation?: string; // Optional based on original query
+}
+
+const transformPillboxDates = (pillboxes: Pillbox[]): Pillbox[] => {
+  return pillboxes.map((pillbox) => ({
+    ...pillbox,
+    startDate: new Date(Number(pillbox.startDate)),
+    lastUpdate: new Date(Number(pillbox.lastUpdate)),
+  }));
+};
+
+
+// Example query to fetch Pillbox data (ensure field names match the interface)
 const GET_PILLBOX_DATA = gql`
-  query {
+  query GetPillboxData {
+    # Ensure the query name and fields match your GraphQL schema
+    # Using 'Pillbox' as an example based on the original code
     Pillbox {
       boxID
       localHospitalNumber
-      simNumber
       pillboxStatus
       startDate
       lastUpdate
-      currentLocation
     }
   }
 `;
 
+// Query to fetch Admin Username
+const GET_ADMIN_USERNAME = gql`
+  query GetAdminUsername($cid: String) {
+    # Ensure the query name and fields match your GraphQL schema
+    Userinfo(CID: $cid) {
+      CID
+      Firstname
+      Lastname
+    }
+  }
+`;
+
+// Define the interface for Admin User data
+interface AdminUser {
+    CID: string;
+    Firstname: string;
+    Lastname: string;
+}
+
+
 function PillboxPage() {
-  const param = useParams();
+  const params = useParams();
   const router = useRouter();
   const pathname = usePathname();
-  const graphQLClient = GraphQLClientConnector();
 
-  const [pillboxData, setPillboxData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [adminUsername, setAdminUsername] = useState<any[]>([]);
+  // --- CHANGE: Memoize the GraphQL client instance ---
+  // This ensures the client is created only once per component instance.
+  const graphQLClient = useMemo(() => GraphQLClientConnector(), []);
+  // --- END CHANGE ---
 
-  const GET_ADMIN_USERNAME = gql`
-    query ExampleQuery($cid: String) {
-      Userinfo(CID: $cid) {
-        CID
-        Firstname
-        Lastname
-      }
-    }
-  `;
+  // State definitions
+  const [pillboxData, setPillboxData] = useState<Pillbox[]>([]);
+  const [loading, setLoading] = useState(true); // Start loading initially
+  const [adminUsername, setAdminUsername] = useState<AdminUser[]>([]);
 
   useEffect(() => {
-    if (!param?.name) {
+    const nameParam = params?.name;
+    if (!nameParam) {
       console.error("❌ No CID found in params!");
+      setLoading(false); // Stop loading if no CID
       return;
     }
 
     const cleanedCID = decodeURIComponent(
-      Array.isArray(param.name) ? param.name[0] : param.name
+      Array.isArray(nameParam) ? nameParam[0] : nameParam
     ).replace(/\s+/g, "");
 
     console.log("🚀 Cleaned Admin CID:", cleanedCID);
 
+    let isMounted = true; // Flag to prevent state updates on unmounted component
+
     const fetchData = async () => {
+      // Ensure we only fetch if the component is still mounted
+      if (!isMounted) return;
+
+      setLoading(true); // Set loading true when fetch starts
+
       try {
-        setLoading(true);
+        // Fetch Pillbox data and Admin Username concurrently
+        console.log("🔍 Fetching data...");
+        const [pillboxResponse, adminResponse] = await Promise.all([
+          graphQLClient.request<{ Pillbox: Pillbox[] }>(GET_PILLBOX_DATA),
+          graphQLClient.request<{ Userinfo: AdminUser[] }>(GET_ADMIN_USERNAME, { cid: cleanedCID })
+        ]);
 
-        // Fetch Pillbox data
-        console.log("🔍 Fetching pillbox data...");
-        const getPillboxData = await graphQLClient.request<{ PillboxData: any[] }>(
-          GET_PILLBOX_DATA
-        );
+        // Check if component is still mounted before updating state
+        if (isMounted) {
+          // Process Pillbox data
+          if (pillboxResponse.Pillbox && pillboxResponse.Pillbox.length > 0) {
+            const transformed = transformPillboxDates(pillboxResponse.Pillbox);
+            setPillboxData(transformed);
+            console.log("✅ Pillbox data transformed and set:", transformed);
+          } else {
+              setPillboxData([]);
+              console.log("ℹ️ No pillbox data found.");
+          }
 
-        if (getPillboxData.PillboxData && getPillboxData.PillboxData.length > 0) {
-          setPillboxData(getPillboxData.PillboxData);
-        } else {
-          setPillboxData([]);
+          // Process Admin data
+          if (adminResponse.Userinfo && adminResponse.Userinfo.length > 0) {
+            setAdminUsername(adminResponse.Userinfo);
+            console.log("✅ Admin Info Fetched:", adminResponse.Userinfo);
+          } else {
+            setAdminUsername([]);
+            console.log("ℹ️ No admin user info found.");
+          }
         }
-
-        console.log("✅ Pillbox data fetched:", pillboxData);
-
-        // Fetch Admin Username
-        console.log("🔍 Fetching admin username...");
-        const getAdminUsername = await graphQLClient.request<{ Userinfo: any[] }>(
-          GET_ADMIN_USERNAME,
-          { cid: cleanedCID }
-        );
-
-        if (getAdminUsername.Userinfo && getAdminUsername.Userinfo.length > 0) {
-          setAdminUsername(getAdminUsername.Userinfo);
-        } else {
-          setAdminUsername([]);
-        }
-
-        console.log("✅ Admin Info Fetched:", adminUsername);
 
       } catch (error: any) {
-        console.error("❌ Failed to fetch pillbox or admin data:", error);
+         // Check if component is still mounted before updating state
+        if (isMounted) {
+            console.error("❌ Failed to fetch pillbox or admin data:", error);
+            setPillboxData([]); // Clear data on error
+            setAdminUsername([]); // Clear data on error
+        }
       } finally {
-        setLoading(false);
+         // Check if component is still mounted before updating state
+        if (isMounted) {
+            setLoading(false); // Set loading false when fetch completes or fails
+        }
       }
     };
 
     fetchData();
-  }, [param.name]); // ✅ Runs when `param.name` changes
 
-  const handleOnEdit = (params: { row: { boxID: string } }) => {
-    router.push(`${pathname}/edit/${params.row.boxID}`);
+    // Cleanup function to set isMounted to false when the component unmounts
+    return () => {
+      isMounted = false;
+    };
+
+    // The effect depends on the admin's CID (params.name) and the stable graphQLClient instance.
+  }, [params?.name, graphQLClient]); // graphQLClient is now stable due to useMemo
+
+  // --- Handler Functions (Edit, Delete, Avatar Click) ---
+
+  const handleOnViewInfo = (boxID: string) => {
+    console.log("Edit Pillbox ID:", boxID);
+    router.push(`${pathname}/${boxID}`);
   };
 
-  const handleOnDelete = (params: { row: { boxID: string } }) => {
-    // Handle delete logic here
-    console.log("Delete Pillbox ID:", params.row.boxID);
-    // Add confirmation and delete functionality (API call to remove the record)
+  const handleOnDelete = (boxID: string) => {
+    console.log("Delete Pillbox ID:", boxID);
+    // Replace alert with a proper confirmation dialog (e.g., using MUI Dialog)
+    if (window.confirm(`Are you sure you want to delete Pillbox ID: ${boxID}?`)) {
+        console.log(`Proceeding with deletion of ${boxID}...`);
+        // --- Add actual API call for deletion here ---
+        // Example:
+        // deletePillboxMutation({ variables: { boxID } })
+        //   .then(() => {
+        //     // Refetch data or update state optimistically
+        //     setPillboxData(currentData => currentData.filter(p => p.boxID !== boxID));
+        //     console.log(`Successfully deleted ${boxID}`);
+        //   })
+        //   .catch(error => {
+        //     console.error(`Failed to delete ${boxID}:`, error);
+        //     // Show error message to user
+        //   });
+    } else {
+        console.log(`Deletion cancelled for ${boxID}.`);
+    }
   };
 
-  // Handle avatar click to navigate to edit profile page
   const handleAvatarClick = () => {
     const userId = adminUsername[0]?.CID;
-    router.push(`/Admin/${param.name}/Main/${userId}`);
+    const currentAdminCID = Array.isArray(params?.name) ? params.name[0] : params?.name; // Get current admin CID safely
+
+    if (userId && currentAdminCID) {
+         // Ensure the path structure matches your application's routing for admin profiles
+        router.push(`/Admin/${currentAdminCID}/Main/${userId}`);
+    } else {
+        console.warn("Cannot navigate to profile: Admin CID or Target User CID not available.", { userId, currentAdminCID });
+    }
   };
 
+  const formatThaiDate = (date: Date): string =>
+    date.toLocaleDateString('th-TH', {
+      year: 'numeric',
+      month: 'long',
+      day: '2-digit',
+    });
+  
+
+
+  // Helper to safely get admin name parts
+  const getAdminName = () => {
+    if (loading && adminUsername.length === 0) {
+        return "กำลังโหลด..."; // Indicate loading specifically for the name
+    }
+    if (adminUsername.length > 0) {
+      const admin = adminUsername[0];
+      // Provide fallbacks for potentially missing names
+      const firstName = admin.Firstname || "ไม่พบชื่อ";
+      const lastName = admin.Lastname || "ไม่พบนามสกุล";
+      return `${firstName} ${lastName}`;
+    }
+    return "ไม่พบข้อมูลผู้ใช้"; // Clearer message if fetch completed but no data
+  };
+
+  // --- JSX Return ---
   return (
     <>
+      {/* Header Section */}
       <Box
         sx={{
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between", // Pushes button to the right
-          marginBottom: "12px",
-          width: "100%", // Ensures full width
+          justifyContent: "space-between",
+          marginBottom: 2,
+          width: "100%",
         }}
       >
-        {/* Admin Name Section */}
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-        <Typography mr="12px" variant="h6">
-          ชื่อผู้ใช้:
-        </Typography>
-        <Typography variant="h6" mr="12px">
-          {adminUsername[0]?.Firstname || "ไม่พบชื่อ"}
-        </Typography>
-        <Typography variant="h6">
-          {adminUsername[0]?.Lastname || "ไม่พบนามสกุล"}
-        </Typography>
+        {/* Admin Name Display */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Typography variant="h6" component="span">
+            ชื่อผู้ใช้:
+          </Typography>
+          <Typography variant="h6" component="span" fontWeight="medium">
+            {getAdminName()}
+          </Typography>
         </Box>
 
-        {/* Circular Profile Button */}
+        {/* Profile Avatar Button */}
         <IconButton
-          sx={{ bgcolor: "grey.300", width: 40, height: 40 }}
+          aria-label="account of current user"
           onClick={handleAvatarClick}
+          sx={{ p: 0 }}
+          disabled={adminUsername.length === 0} // Disable if no admin data yet
         >
-          <Avatar sx={{ bgcolor: "primary.main", width: 36, height: 36 }}>
+          <Avatar sx={{ bgcolor: "primary.main", width: 40, height: 40 }}>
             <AccountCircleIcon />
           </Avatar>
         </IconButton>
       </Box>
 
-      <Paper sx={{ minHeight: "90vh", padding: "28px", maxWidth: "1080px" }}>
+      {/* Main Content Area */}
+      <Paper sx={{ minHeight: "85vh", padding: 3, width: '100%', maxWidth: "1080px", margin: '0 auto' }}>
         {loading ? (
+          // Loading Indicator
           <Box
             sx={{
               display: "flex",
@@ -169,15 +284,90 @@ function PillboxPage() {
             }}
           >
             <CircularProgress />
+            <Typography sx={{ ml: 2 }}>Loading Pillbox Data...</Typography>
           </Box>
         ) : (
+          // Data Display Section
           <>
-            <SearchBar />
-            {/* Pass pillboxData to DataGridTable */}
-            <DataGridTable
-              row={pillboxData || []} // Ensures pillboxData is not undefined
-              column={PILLBOX_DATAGRID.columns(handleOnEdit, handleOnDelete)}
-            />
+            <SearchBar /> {/* Include SearchBar */}
+            <Box sx={{ my: 5 }}>
+              {/* <Typography variant="h5" component="h2" gutterBottom>
+                ข้อมูลกล่องโดยรวม
+              </Typography> */}
+            </Box>
+            {/* Table */}
+            <TableContainer component={Paper} elevation={2}>
+              <Table sx={{ minWidth: 650 }} aria-label="pillbox table">
+                <TableHead sx={{ backgroundColor: 'grey.200' }}>
+                  <TableRow>
+                    <TableCell>ID กล่อง</TableCell>
+                    <TableCell>รหัสโรงพยาบาล</TableCell>
+                    <TableCell>สถาณะกล่อง</TableCell>
+                    <TableCell>วันที่เริ่มใช้งาน</TableCell>
+                    <TableCell>วันที่ทำงานล่าสุด</TableCell>  
+                    <TableCell align="center">ดูข้อมูล</TableCell> {/* New View Info Column */}
+                    <TableCell align="center">ลบกล่องนี้</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {pillboxData.length > 0 ? (
+                    pillboxData.map((pillbox) => (
+                      <TableRow
+                        key={pillbox.boxID}
+                        hover
+                        sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                      >
+                        <TableCell component="th" scope="row">
+                          {pillbox.boxID}
+                        </TableCell>
+                        <TableCell>{pillbox.localHospitalNumber || 'N/A'}</TableCell>
+                        <TableCell>{pillbox.pillboxStatus || 'N/A'}</TableCell>
+                        <TableCell>{pillbox.startDate ? formatThaiDate(pillbox.startDate as Date) : 'N/A'}</TableCell>
+                        <TableCell>{pillbox.lastUpdate ? formatThaiDate(pillbox.lastUpdate as Date) : 'N/A'}</TableCell>
+
+                        {/* 🔍 View Info Button */}
+                        <TableCell align="center">
+                        <Button
+                          variant="outlined"
+                          size="large"
+                          onClick={() => handleOnViewInfo(pillbox.boxID)}
+                          sx={{
+                            borderRadius: '5px', // Rounded corners like the image
+                          }}
+                        >
+                          ดูข้อมูล
+                        </Button>
+                        </TableCell>
+                        {/* ❌ Delete Button */}
+                        <TableCell align="center">
+                          <Button
+                            variant="outlined"
+                            size="large"
+                            onClick={() => handleOnDelete(pillbox.boxID)}
+                            sx={{
+                              backgroundColor: '#cc3300',
+                              color: 'white',
+                              borderRadius: '5px',
+                              '&:hover': {
+                                backgroundColor: '#b52a00',
+                              },
+                            }}
+                          >
+                            ลบ
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={7} align="center">
+                        No pillbox data available.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
           </>
         )}
       </Paper>
