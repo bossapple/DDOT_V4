@@ -39,6 +39,25 @@ interface ObserverInfoType {
   Lastname: string;
 }
 
+interface DayActivityType {
+  cid: string;
+  date_: string;
+  pills_no: number;
+  isComplete: string; // ✅ string instead of boolean
+}
+
+interface PatientWithActivitiesType {
+  patientCID: string;
+  Firstname: string;
+  Lastname: string;
+  DayActivities: DayActivityType[];
+}
+
+interface ObservationType {
+  patient: PatientWithActivitiesType;
+}
+
+
 function ObsPatientPage(params: { params: { name: string | string[] } }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -47,6 +66,8 @@ function ObsPatientPage(params: { params: { name: string | string[] } }) {
   const [observerInfo, setObserverInfo] = useState<ObserverInfoType | null>(null);
   const [loading, setLoading] = useState(false);
   const [currentDate, setCurrentDate] = useState<string>("");
+  const [patientsWithActivities, setPatientsWithActivities] = useState<PatientWithActivitiesType[]>([]);
+
 
 
   const GET_OBSERVER_PATIENT = gql`
@@ -79,6 +100,78 @@ function ObsPatientPage(params: { params: { name: string | string[] } }) {
     }
   `;
 
+  const Test = gql`
+    query GetDayActivitiesByObserver($observerCid: String) {
+      Patient(observerCID: $observerCid) {
+        patientCID
+        Firstname
+        Lastname
+        DayActivities(cid: $patientCID) {
+          cid
+          date_
+          pills_no
+          isComplete
+        }
+      }
+    }
+
+  `
+  useEffect(() => {
+    if (!params?.params?.name) {
+      console.error("❌ No CID found in params!");
+      return;
+    }
+  
+    const cleanedCID = decodeURIComponent(
+      Array.isArray(params.params.name) ? params.params.name[0] : params.params.name
+    ).replace(/\s+/g, "").trim();
+  
+    const fetchDayActivities = async () => {
+      try {
+        setLoading(true);
+        console.log("🔍 Fetching day activity data for Observer CID:", cleanedCID);
+  
+        const result = await graphQLClient.request<{
+          observation: {
+            patient: {
+              patientCID: string;
+              Firstname: string;
+              Lastname: string;
+              DayActivities: {
+                cid: string;
+                date_: string;
+                pills_no: number;
+                isComplete: string; // ✅ string, not boolean
+              }[];
+            };
+          }[];
+        }>(Test, { observerCid: cleanedCID });
+  
+        const formatted = result.observation.map(obs => ({
+          ...obs.patient,
+          DayActivities: obs.patient.DayActivities.map(act => ({
+            ...act,
+            date_: new Date(act.date_).toLocaleDateString('th-TH', {
+              year: "numeric",
+              month: "long",
+              day: "2-digit"
+            })
+          }))
+        }));
+  
+        setPatientsWithActivities(formatted);
+        console.log("✅ Day Activity data fetched:", formatted);
+      } catch (error: any) {
+        console.error(`❌ Failed to fetch day activity data: ${error.message}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchDayActivities();
+  }, [params.params.name]);
+  
+  
   useEffect(() => {
     if (!params?.params?.name) {
       console.error("❌ No CID found in params!");
@@ -219,10 +312,33 @@ const CustomTooltip = ({ active, payload }: any) => {
   return (
     <Paper sx={{ minHeight: "90vh", padding: "28px", maxWidth: "1080px" }}>
       {/* Current Date in the top-right corner */}
-      <Box sx={{ position: "absolute", top: 16, right: 16 }}>
-        <Typography variant="h6">{currentDate}</Typography>
-      </Box>
-      
+      <Box
+      sx={{
+        position: "absolute",
+        top: 16,
+        right: 16,
+        display: "flex",          // enables flex layout
+        flexDirection: "column", // stacks vertically
+        alignItems: "center",     // centers horizontally
+        gap: 1                    // space between text and icon
+      }}
+    >
+      <Typography variant="h6">{currentDate}</Typography>
+      <IconButton
+        sx={{
+          bgcolor: "grey.300",
+          width: 40,
+          height: 40,
+          p: 0
+        }}
+        onClick={handleAvatarClick}
+      >
+        <Avatar sx={{ bgcolor: "primary.main", width: 36, height: 36 }}>
+          <AccountCircleIcon />
+        </Avatar>
+      </IconButton>
+    </Box>
+
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "70vh" }}>
           <CircularProgress />
@@ -236,11 +352,11 @@ const CustomTooltip = ({ active, payload }: any) => {
               <Typography variant="h6" mr="12px">{observerInfo?.Firstname || "ไม่พบชื่อ"}</Typography>
               <Typography variant="h6">{observerInfo?.Lastname || "ไม่พบข้อมูล"}</Typography>
             </Box>
-            <IconButton sx={{ bgcolor: "grey.300", width: 40, height: 40 }} onClick={handleAvatarClick}>
+            {/* <IconButton sx={{ bgcolor: "grey.300", width: 40, height: 40 }} onClick={handleAvatarClick}>
               <Avatar sx={{ bgcolor: "primary.main", width: 36, height: 36 }}>
                 <AccountCircleIcon />
               </Avatar>
-            </IconButton>
+            </IconButton> */}
           </Box>
 
           {/* Report dashboard graph */}

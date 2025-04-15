@@ -15,13 +15,13 @@ import {
   IconButton
 } from '@mui/material'
 import EventNoteIcon from '@mui/icons-material/EventNote';
-
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ReportTable from '@/components/shared/reportTabe'
 
 import CancelIcon from '@mui/icons-material/Cancel';
 import { TabPanel, TabContext } from '@mui/lab'
 import { ColorBlindType, SideEffectType } from '@/app/(main)/Admin/[name]/Patient/[userId]/page'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname, useParams } from 'next/navigation'
 import { millisecondsToTime } from '@/app/lib/utility'
 import { DataGrid } from '@mui/x-data-grid'
 import { COUNT_COLOR_BLIND_REPORT } from '@/app/constants/colorBlind/countColorBlind'
@@ -92,6 +92,7 @@ function PatientId({ params }: { params: { patientId: string } }) {
   const graphQLClient = GraphQLClientConnector()
   const router = useRouter()
   const pathname = usePathname()
+  const { name} = useParams()
 
   const [valueTab, setValueTab] = useState('COLOR BLIND')
   const [loading, setLoading] = useState(true)
@@ -528,22 +529,63 @@ function PatientId({ params }: { params: { patientId: string } }) {
   
     return age;
   };
+  const handleBackClick = () => {
+    router.push(`/Obs/${name}/Patient`); // Correct the navigation path
+  }
   
 
   return (
     <Paper sx={{ minHeight: "90vh", padding: "28px", maxWidth: "1080px" }}>
       {/* Current Date in the top-right corner */}
-      <Box sx={{ position: "absolute", top: 16, right: 16 }}>
-        <Typography variant="h6">{currentDate}</Typography>
-        <IconButton
-          sx={{ marginTop: 2, display: "flex", alignItems: "center" }}
-          onClick={handleMonthDataClick} // Uncomment this if you want to add the navigation logic
+      <Box sx={{ position: "absolute", top: 16, left: 300 }}> {/* Adjust this value to match sidebar width + margin */}
+      <IconButton
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            border: "1px solid rgb(0, 0, 0)",
+            borderRadius: "8px",
+            padding: "6px 12px",
+            color: "black", // default icon + text color
+            transition: "all 0.2s ease-in-out", // optional smooth transition
+            '&:hover': {
+              backgroundColor: 'rgb(0, 0, 0)',
+              color: 'white', // turns both icon and text white on hover
+              '& .hover-text': {
+                color: 'white',
+              },
+            },
+          }}
+          onClick={handleMonthDataClick}
           aria-label="view-month-data"
         >
           <EventNoteIcon fontSize="large" />
-          <Typography variant="body1" sx={{ marginLeft: 1 }}>
+          <Typography
+            variant="body2"
+            className="hover-text" // 👈 add this to target on hover
+            sx={{
+              marginLeft: 1,
+              fontSize: "1rem",
+              fontWeight: 600,
+              color: "black", // default
+              fontFamily: "Prompt, sans-serif",
+              letterSpacing: "0.5px",
+              transition: "color 0.2s ease-in-out",
+            }}
+          >
             ผลรายงานช่วง 1 เดือน
           </Typography>
+        </IconButton>
+      </Box>
+
+      <Box sx={{ position: "absolute", top: 16, right: 16 }}>
+        <Typography variant="h6">{currentDate}</Typography>
+      <IconButton
+          onClick={handleBackClick}
+          aria-label="go-back"
+          sx={{ color: "black", marginRight: 1 }} // Add margin to separate the icon and text
+        >
+          <ArrowBackIcon fontSize="large" />
+        <Typography variant="h6" sx={{ color: "black" }}>ย้อนกลับ</Typography> {/* Text next to the icon */}
         </IconButton>
       </Box>
       {loading ? (
