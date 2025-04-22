@@ -46,6 +46,8 @@ interface PatientNameType {
   Firstname: string
   Lastname: string
   dob: Date
+  weight: number
+  height: number
 }
 
 interface GroupedActivities {
@@ -161,6 +163,8 @@ function PatientId({ params }: { params: { patientId: string } }) {
         Firstname
         Lastname
         dob
+        weight
+        height
       }
     }
   `
@@ -638,16 +642,19 @@ function PatientId({ params }: { params: { patientId: string } }) {
             }}
           >
             <Typography mr={1}>อายุ: </Typography>
-            {/* Code for age calculation*/}
-            <Typography sx={{ mr: 1}}>{calculateAge((patientName[0]?.dob))}</Typography>
+            <Typography sx={{ mr: 1 }}>
+              {patientName[0]?.dob ? calculateAge(patientName[0]?.dob) : 'ไม่มีข้อมูล'}
+            </Typography>
 
             <Typography mr={1}>ส่วนสูง: </Typography>
-            {/*Display data from query*/}
-            <Typography sx={{ mr: 1}}>Height</Typography>
+            <Typography sx={{ mr: 1 }}>
+              {patientName[0]?.height != null ? `${patientName[0]?.height} ซม.` : 'ไม่มีข้อมูล'}
+            </Typography>
 
             <Typography mr={1}>น้ำหนัก: </Typography>
-            {/*Display data from query*/}
-            <Typography sx={{ mr: 1}}>Weight</Typography>
+            <Typography sx={{ mr: 1 }}>
+              {patientName[0]?.weight != null ? `${patientName[0]?.weight} กก.` : 'ไม่มีข้อมูล'}
+            </Typography>
           </Box>
           <Box sx={{ boxShadow: 1, borderRadius: '8px' }}>
             <TabContext value={valueTab}>

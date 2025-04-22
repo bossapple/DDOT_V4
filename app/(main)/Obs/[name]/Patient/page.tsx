@@ -17,9 +17,10 @@ import SearchBar from "@/components/shared/searchBar";
 import DataGridTable from "@/components/shared/dataGridTable";
 import { OBSERVER_DATAGRID } from "@/app/constants/observer/observerDataGrid";
 import { useRouter, usePathname } from "next/navigation";
+import { useParams } from 'next/navigation';
 
 // Importing PieChart from recharts
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Label } from "recharts";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Label, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 
 const graphQLClient = GraphQLClientConnector();
 
@@ -39,34 +40,58 @@ interface ObserverInfoType {
   Lastname: string;
 }
 
-interface DayActivityType {
-  cid: string;
-  date_: string;
-  pills_no: number;
-  isComplete: string; // ✅ string instead of boolean
-}
-
-interface PatientWithActivitiesType {
+interface SideEffectType {
+  sideEffectID: string;
   patientCID: string;
-  Firstname: string;
-  Lastname: string;
-  DayActivities: DayActivityType[];
+  effectDate: Date | string;
+  effectTime: string;
+  effectDesc: string;
 }
 
-interface ObservationType {
-  patient: PatientWithActivitiesType;
+interface ColorBlindType {
+  colorBlindID: number;
+  patientCID: string;
+  colorBlindDate: Date | string;
+  colorBlindTime: string;
+  correct: number;
+  incorrect: number;
 }
+
+interface DayActivityType {
+  date_: Date | string;
+  pills_no: string;
+  isComplete: string;
+  cid: string;
+}
+interface GetDayActivityResponse {
+  getDayActivityForObserver: DayActivityType[];
+}
+
+
+
 
 
 function ObsPatientPage(params: { params: { name: string | string[] } }) {
+  const { observerCID } = useParams();
   const router = useRouter();
   const pathname = usePathname();
 
   const [patientInfo, setPatientInfo] = useState<PatientinfoType[]>([]);
   const [observerInfo, setObserverInfo] = useState<ObserverInfoType | null>(null);
   const [loading, setLoading] = useState(false);
+  const [sideEffects, setSideEffects] = useState<SideEffectType[]>([]); // Store side effects here
+  const [sideEffectData, setSideEffectData] = useState<{ effectName: string; patientCount: number }[]>([]);
   const [currentDate, setCurrentDate] = useState<string>("");
-  const [patientsWithActivities, setPatientsWithActivities] = useState<PatientWithActivitiesType[]>([]);
+  const [patientCount, setPatientCount] = useState<number>(0);
+  const [colorBlindData, setColorBlindData] = useState<ColorBlindType[]>([]);
+  const [colorBlindCount, setColorBlindCount] = useState<number>(0);
+  const [dayActivities, setDayActivities] = useState<DayActivityType[]>([]);
+  const [dayActivityCount, setDayActivityCount] = useState<number>(0);
+
+
+
+
+
 
 
 
@@ -100,78 +125,219 @@ function ObsPatientPage(params: { params: { name: string | string[] } }) {
     }
   `;
 
-  const Test = gql`
-    query GetDayActivitiesByObserver($observerCid: String) {
-      Patient(observerCID: $observerCid) {
+  const GET_SIDEEFFECT = gql`
+    query GetSideEffectsForObserver($observerCID: String!) {
+      getSideEffectsForObserver(observerCID: $observerCID) {
+        sideEffectID
         patientCID
-        Firstname
-        Lastname
-        DayActivities(cid: $patientCID) {
-          cid
-          date_
-          pills_no
-          isComplete
-        }
+        effectDate
+        effectTime
+        effectDesc
       }
     }
-
   `
+
+  const GET_COLORBLIND = gql`
+    query GetColorBlindForObserver($observerCID: String!) {
+      getColorBlindForObserver(observerCID: $observerCID) {
+        colorBlindID
+        patientCID
+        colorBlindDate
+        colorBlindTime
+        correct
+        incorrect
+      }
+    }
+  `;
+  const GET_DAY_ACTIVITY = gql`
+  query GetDayActivityForObserver($observerCID: String!) {
+    getDayActivityForObserver(observerCID: $observerCID) {
+      date_
+      pills_no
+      isComplete
+      cid
+    }
+  }
+`;
+
+
+
+
+  //For getting patient side effects
   useEffect(() => {
     if (!params?.params?.name) {
-      console.error("❌ No CID found in params!");
       return;
     }
   
     const cleanedCID = decodeURIComponent(
       Array.isArray(params.params.name) ? params.params.name[0] : params.params.name
-    ).replace(/\s+/g, "").trim();
+    )
+      .replace(/\s+/g, "")
+      .trim();
   
-    const fetchDayActivities = async () => {
+    const fetchSideEffectChartData = async () => {
       try {
         setLoading(true);
-        console.log("🔍 Fetching day activity data for Observer CID:", cleanedCID);
   
-        const result = await graphQLClient.request<{
-          observation: {
-            patient: {
-              patientCID: string;
-              Firstname: string;
-              Lastname: string;
-              DayActivities: {
-                cid: string;
-                date_: string;
-                pills_no: number;
-                isComplete: string; // ✅ string, not boolean
-              }[];
-            };
-          }[];
-        }>(Test, { observerCid: cleanedCID });
+        const getData = await graphQLClient.request<{
+          getSideEffectsForObserver: SideEffectType[];
+        }>(GET_SIDEEFFECT, {
+          observerCID: cleanedCID,
+        });
   
-        const formatted = result.observation.map(obs => ({
-          ...obs.patient,
-          DayActivities: obs.patient.DayActivities.map(act => ({
-            ...act,
-            date_: new Date(act.date_).toLocaleDateString('th-TH', {
+        const formatted = getData.getSideEffectsForObserver.map(effect => {
+          const date = new Date(Number(effect.effectDate));
+          return {
+            ...effect,
+            effectDate: date.toLocaleDateString("en-EN", {
               year: "numeric",
-              month: "long",
-              day: "2-digit"
-            })
-          }))
+              month: "numeric",
+              day: "numeric",
+            }),
+          };
+        });
+  
+        // Count occurrences of each effectDesc
+        const counts: Record<string, number> = {};
+        formatted.forEach(effect => {
+          const desc = effect.effectDesc.trim();
+          counts[desc] = (counts[desc] || 0) + 1;
+        });
+  
+        const chartData = Object.entries(counts).map(([effectName, patientCount]) => ({
+          effectName,
+          patientCount,
         }));
   
-        setPatientsWithActivities(formatted);
-        console.log("✅ Day Activity data fetched:", formatted);
+        setSideEffectData(chartData);
+        console.log("📊 SideEffect Chart Data:", chartData);
       } catch (error: any) {
-        console.error(`❌ Failed to fetch day activity data: ${error.message}`);
+        console.error(`❌ Failed to fetch side effects data: ${error.message}`);
       } finally {
         setLoading(false);
       }
     };
   
-    fetchDayActivities();
+    fetchSideEffectChartData();
+  }, [params.params.name]);
+  
+
+  //For getting paitent color blind
+  useEffect(() => {
+    if (!params?.params?.name) {
+      console.error("❌ No observerCID found for ColorBlind data!");
+      return;
+    }
+  
+    const cleanedCID = decodeURIComponent(
+      Array.isArray(params.params.name) ? params.params.name[0] : params.params.name
+    )
+      .replace(/\s+/g, "")
+      .trim();
+  
+    const fetchColorBlindData = async () => {
+      try {
+        //console.log("🔍 Fetching ColorBlind data for observerCID:", cleanedCID);
+  
+        const getData = await graphQLClient.request<{ getColorBlindForObserver: ColorBlindType[] }>(
+          GET_COLORBLIND,
+          { observerCID: cleanedCID }
+        );
+  
+        const formattedColorBlind = getData.getColorBlindForObserver.map(item => {
+          const formattedDate = new Date(Number(item.colorBlindDate)).toLocaleDateString("en-EN", {
+            year: "numeric",
+            month: "numeric",
+            day: "numeric"
+          });
+  
+          const formattedTime = new Date("1970-01-01T" + item.colorBlindTime).toLocaleTimeString("en-EN", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+  
+          const formattedItem = {
+            ...item,
+            colorBlindDate: formattedDate,
+            colorBlindTime: formattedTime,
+          };
+  
+          //console.log("📅 Formatted ColorBlind Entry:", formattedItem);
+          return formattedItem;
+        });
+  
+        setColorBlindData(formattedColorBlind);
+        setColorBlindCount(formattedColorBlind.length);
+        console.log("✅ Formatted Color Blind", formattedColorBlind);
+        console.log("🧠 Total Patients with Color Blindness Data:", formattedColorBlind.length);
+
+      } catch (error: any) {
+        console.error(`❌ Failed to fetch color blindness data: ${error.message}`);
+      }
+    };
+  
+    fetchColorBlindData();
+  }, [params.params.name]);
+  
+  // For DayActivity
+  useEffect(() => {
+    if (!params?.params?.name) {
+      console.error("❌ No observerCID found for DayActivity data!");
+      return;
+    }
+  
+    const cleanedCID = decodeURIComponent(
+      Array.isArray(params.params.name) ? params.params.name[0] : params.params.name
+    )
+      .replace(/\s+/g, "")
+      .trim();
+  
+    const fetchDayActivityData = async () => {
+      try {
+        const getData = await graphQLClient.request<GetDayActivityResponse>(
+          GET_DAY_ACTIVITY,
+          { observerCID: cleanedCID }
+        );
+  
+        const formattedDayActivities = getData.getDayActivityForObserver.map(item => {
+          let formattedDate: string;
+  
+          // Check if it's a number (like 1713916800000), convert to Date directly
+          if (typeof item.date_ === "number" || !isNaN(Number(item.date_))) {
+            const parsed = new Date(Number(item.date_));
+            formattedDate = parsed.toLocaleDateString("en-EN", {
+              year: "numeric",
+              month: "numeric",
+              day: "numeric"
+            });
+          } else {
+            formattedDate = String(item.date_); // fallback if it's a weird string
+            console.warn("⚠️ Could not parse date, using raw value:", item.date_);
+          }
+  
+          return {
+            ...item,
+            date_: formattedDate
+          };
+        });
+  
+        setDayActivities(formattedDayActivities);
+        setDayActivityCount(formattedDayActivities.length);
+        console.log("✅ Formatted DayActivity:", formattedDayActivities);
+        console.log("📅 Total DayActivity Count:", formattedDayActivities.length);
+  
+      } catch (error: any) {
+        console.error(`❌ Failed to fetch DayActivity data: ${error.message}`);
+      }
+    };
+  
+    fetchDayActivityData();
   }, [params.params.name]);
   
   
+  
+  
+  // For patient data
   useEffect(() => {
     if (!params?.params?.name) {
       console.error("❌ No CID found in params!");
@@ -188,7 +354,6 @@ function ObsPatientPage(params: { params: { name: string | string[] } }) {
     const fetchData = async () => {
       try {
         setLoading(true);
-        console.log("🔍 Fetching patient data for Observer CID:", cleanedCID);
         const getData = await graphQLClient.request<{ Userinfo: PatientinfoType[] }>(
           GET_OBSERVER_PATIENT,
           { observerCid: cleanedCID }
@@ -206,15 +371,19 @@ function ObsPatientPage(params: { params: { name: string | string[] } }) {
         }));
 
         setPatientInfo(formattedData);
+        setPatientCount(formattedData.length); // Patient count
+        //console.log("Patient count:", formattedData.length);
 
-        console.log("🔍 Fetching Observer info...");
+
+
+        //console.log("🔍 Fetching Observer info...");
         const getObserver = await graphQLClient.request<{ Userinfo: ObserverInfoType[] }>(
           GET_OBSERVER_INFO,
           { observerCid: cleanedCID }
         );
 
         setObserverInfo(getObserver?.Userinfo?.[0] || null);
-        console.log("✅ Observer Info Fetched:", getObserver?.Userinfo?.[0]);
+        //console.log("✅ Observer Info Fetched:", getObserver?.Userinfo?.[0]);
       } catch (error: any) {
         console.error(`❌ Failed to fetch patient or observer data: ${error.message}`);
       } finally {
@@ -225,6 +394,7 @@ function ObsPatientPage(params: { params: { name: string | string[] } }) {
     fetchData();
   }, [params.params.name]);
 
+  //For current Date
   useEffect(() => {
     const date = new Date();
     const formattedDate = date.toLocaleDateString("th-TH", {
@@ -251,34 +421,34 @@ function ObsPatientPage(params: { params: { name: string | string[] } }) {
       console.error("Observer info is missing, cannot navigate.");
     }
   };
-
 // Function to generate graph data.
 // Data meaning 
 /*
-graph input: 1 = การ์ฟกินยา,  2 = การ์ฟตาบอดสี, 3 = การ์ฟอาการแพ้ยาอื่นๆ
-complete input: 1 = จำนวนผู้ที่กินยา, 2 = จำนวนผู้ที่มีอาการตสบอดสี, 3 = จำนวนผู้ที่มีอาการแพ้ยาอื่นๆ
+graph input: 1 = การ์ฟกินยา,  2 = การ์ฟตาบอดสี
+complete input: 1 = จำนวนผู้ที่กินยา, 2 = จำนวนผู้ที่มีอาการตสบอดสี
  */
 const createGraphData = (graph: number, completed: number, total: number) => {
-  const inProgress = total - completed;
-  var completedLabel;
-  var inProgressLabel;
-  var label
+  if (total === 0) {
+    return {
+      data: [{ name: "ไม่มีข้อมูลผู้ป่วย", value: 1 }],
+      label: "ไม่มีข้อมูลผู้ป่วย",
+      isEmpty: true // ✅ flag for custom rendering
+    };
+  }
 
-  // 1 for ผู้ป่วยทานยา, 2 ผู้ป่วยมีอาการตาบอดสี, 3 ผู้ป่วยมีอาการแพ้อื่นๆ
-  if(graph == 1){
+  const inProgress = total - completed;
+  let completedLabel;
+  let inProgressLabel;
+  let label;
+
+  if (graph === 1) {
     completedLabel = `ผู้ป่วยทานยา ${completed} คน`;
     inProgressLabel = `ผู้ป่วยไม่ทานยา ${inProgress} คน`;
-    label = `ผู้ป่วยไม่ทานยา ${inProgress} คน`;
-
-  }else if(graph == 2){
+    label = `ผู้ป่วยไม่ทานยา ${inProgress} คนจาก ${total} คน`;
+  } else{
     completedLabel = `ผู้ป่วยมีอาการตาบอดสี ${completed} คน`;
     inProgressLabel = `ผู้ป่วยไม่มีอาการตาบอดสี ${inProgress} คน`;
-    label = `ผู้ป่วยมีอาการตาบอดสี ${completed} คน`;
-
-  }else{
-    completedLabel = `ผู้ป่วยมีอาการแพ้ยาอื่นๆ ${completed} คน`;
-    inProgressLabel = `ผู้ป่วยไม่มีอาการแพ้ยาอื่นๆ ${inProgress} คน`;
-    label = `ผู้ป่วยมีอาการแพ้ยาอื่น ${completed} คน`;
+    label = `ผู้ป่วยมีอาการตาบอดสี ${completed} คนจาก ${total} คน`;
   }
 
   return {
@@ -286,15 +456,45 @@ const createGraphData = (graph: number, completed: number, total: number) => {
       { name: completedLabel, value: completed },
       { name: inProgressLabel, value: inProgress }
     ],
-    label: label
+    label: label,
+    isEmpty: false
   };
-
 };
 
-// Example usage
-const circleData1 = createGraphData(1, 8, 10);
-const circleData2 = createGraphData(2, 1, 10);
-const circleData3 = createGraphData(3, 1, 10);
+// Count how many patients have each type of side effect
+// const countSideEffectDescriptions = (effects: SideEffectType[]) => {
+//   const counts: Record<string, number> = {};
+
+//   effects.forEach(effect => {
+//     const desc = effect.effectDesc.trim(); // Normalize
+//     counts[desc] = (counts[desc] || 0) + 1;
+//   });
+
+//   return Object.entries(counts).map(([name, count]) => ({ name, count }));
+// };
+
+
+
+// Input data to the graphs
+const  circleData1 = createGraphData(1, dayActivityCount, patientCount);
+const  circleData2 = createGraphData(2, colorBlindCount, patientCount);
+
+//Example Data of side effect chart
+// const sideEffectData = [
+//   { effectName: 'Nausea', patientCount: 7 },
+//   { effectName: 'Headache', patientCount: 5 },
+//   { effectName: 'Rash', patientCount: 3 },
+//   { effectName: 'Dizziness', patientCount: 6 },
+//   { effectName: 'Vomiting', patientCount: 4 },
+//   { effectName: 'Fatigue', patientCount: 2 },
+//   { effectName: 'Fever', patientCount: 5 },
+//   { effectName: 'Cough', patientCount: 1 },
+//   { effectName: 'Shortness of breath', patientCount: 3 },
+//   { effectName: 'Chest pain', patientCount: 2 },
+// ];
+
+
+
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
@@ -338,7 +538,6 @@ const CustomTooltip = ({ active, payload }: any) => {
         </Avatar>
       </IconButton>
     </Box>
-
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "70vh" }}>
           <CircularProgress />
@@ -361,63 +560,105 @@ const CustomTooltip = ({ active, payload }: any) => {
 
           {/* Report dashboard graph */}
           <Box sx={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
-            <Box sx={{ width: "30%", display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <ResponsiveContainer width="100%" height={220}>
+          {/* Graph 1 */}
+          <Box sx={{ width: "30%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <Typography variant="h6" sx={{ mt: 1, textAlign: "center" }}>
+              {circleData1.label}
+            </Typography>
+            <ResponsiveContainer width="100%" height={220}>
               <PieChart>
-                <Pie data={circleData1.data}
-                  dataKey="value" nameKey="name"
-                  cx="50%" cy="50%" outerRadius={80} 
-                  stroke="#000" strokeWidth={3}
+                <Pie
+                  data={circleData1.data}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  stroke="#000"
+                  strokeWidth={3}
                   label
                 >
-                  <Cell fill="#88b7f4" />
-                  <Cell fill="#000" />
+                  {circleData1.isEmpty ? (
+                    <Cell fill="#cccccc" />
+                  ) : (
+                    <>
+                      <Cell fill="#88b7f4" />
+                      <Cell fill="#000" />
+                    </>
+                  )}
                 </Pie>
                 <Label position="center" fontSize="16px" fill="#000" />
                 <Tooltip content={<CustomTooltip />} />
-              </PieChart> 
-              </ResponsiveContainer>
-              <Typography variant="h6" sx={{ marginTop: "8px" }}>{circleData1.label}</Typography>
-            </Box>
-
-            <Box sx={{ width: "30%", display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <ResponsiveContainer width="100%" height={220}>
-                <PieChart>
-                  <Pie data={circleData2.data}
-                    dataKey="value" nameKey="name"
-                    cx="50%" cy="50%" outerRadius={80} 
-                    stroke="#000" strokeWidth={3}
-                    label
-                  >
-                    <Cell fill="#000" />
-                    <Cell fill="#9c6a91" />
-                  </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
-              <Typography variant="h6" sx={{ marginTop: "8px" }}>{circleData2.label}</Typography>
-            </Box>
-
-            <Box sx={{ width: "30%", display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <ResponsiveContainer width="100%" height={220}>
-                <PieChart>
-                  <Pie data={circleData3.data}
-                    dataKey="value" nameKey="name"
-                    cx="50%" cy="50%" outerRadius={80} 
-                    stroke="#000" strokeWidth={3}
-                    label
-                  >
-                    <Cell fill="#000" />
-                    <Cell fill="#e85a5a" />
-                  </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
-              <Typography variant="h6" sx={{ marginTop: "8px" }}>{circleData3.label}</Typography>
-            </Box>
+              </PieChart>
+            </ResponsiveContainer>
+            {/* <Typography variant="h6" sx={{ mt: 1, textAlign: "center" }}>
+              {circleData1.label}
+            </Typography> */}
           </Box>
 
+          {/* Graph 2 */}
+          <Box sx={{ width: "30%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <Typography variant="h6" sx={{ mt: 1, textAlign: "center" }}>
+              {circleData2.label}
+            </Typography>
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie
+                  data={circleData2.data}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  stroke="#000"
+                  strokeWidth={3}
+                  label
+                >
+                  {circleData2.isEmpty ? (
+                    <Cell fill="#cccccc" />
+                  ) : (
+                    <>
+                      <Cell fill="#000" />
+                      <Cell fill="#9c6a91" />
+                    </>
+                  )}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+            {/* <Typography variant="h6" sx={{ mt: 1, textAlign: "center" }}>
+              {circleData2.label}
+            </Typography> */}
+          </Box>
 
+          {/* Graph 3 */}
+          <Box sx={{ width: "30%", display: "flex", flexDirection: "column", alignItems: "center",}}>
+            <Typography variant="h6" sx={{ mt: 1, textAlign: "center" }}>
+              ผู้ป่วยที่มีอาการแพ้ยาอื่นๆ
+            </Typography>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                data={sideEffectData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="effectName"
+                  angle={-45}
+                  textAnchor="end"
+                  interval={0}
+                  height={80}
+                />
+                <YAxis
+                  allowDecimals={false}
+                  domain={[0, patientCount]}
+                />
+                <Tooltip />
+                <Bar dataKey="patientCount" fill="#e85a5a" name="จำนวนผู้ป่วย" />
+              </BarChart>
+            </ResponsiveContainer>
+          </Box>
+        </Box>
           {/* Search Bar */}
           <SearchBar />
           {/* Patient data table*/}
